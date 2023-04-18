@@ -7,93 +7,24 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1"
     />
-    <title>Client side</title>
+    <title>Message</title>
 
-    <style>
-      * {
-        padding: 0;
-        margin: 0;
-        box-sizing: border-box;
-      }
-      body {
-        background: black;
-      }
-      .container {
-        width: calc(100% - 20px);
-        border: 2px solid #217e7f;
-        padding: 10px;
-        margin: 10px auto;
-        border-radius: 5px;
-        background: linear-gradient(45deg, #205f51, #001042);
-        height: 70vh;
-        display: flex;
-        flex-direction: column;
-      }
-      .sendsection {
-        display: flex;
-        justify-self: end;
-      }
-      .sendsection input {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #71c3a4;
-        outline: none;
-      }
-      #chatlist {
-        list-style: none;
-        padding-inline: 0;
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        height: 100%;
-        font-size: 19px;
-        flex: auto;
-        margin: 0;
-        overflow-y: auto;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-      }
-      #chatlist::-webkit-scrollbar{
-        display: none;
-      }
-      #chatlist li {
-        padding: 2px 5px;
-        border-radius: 30px;
-        color: white;
-        margin: 3px 0;
-      }
-      .s1 {
-        text-align: left;
-
-        background: linear-gradient(45deg, #ae16d0, #c94501);
-        align-self: flex-start;
-      }
-      .s2 {
-        text-align: right;
-        background: linear-gradient(45deg, #1a5881, #2cbb7b);
-        align-self: flex-end;
-      }
-      button#send {
-        border: none;
-        background: #71c3a4;
-        padding: 10px;
-        cursor: pointer;
-      }
-      h2 {
-        text-align: center;
-        color: #69b6a5;
-        margin-bottom: 10px;
-        background: #272727;
-      }
-    </style>
+    <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
     <h2>AHR Chat</h2>
+    <h3>
+      <span id="groupName" ondblclick="setGroup();">Group Name</span>
+      <span id="userName" ondblclick="setUname();">Name</span>
+
+      <span
+        id="usercount"
+        title="Lorem ipsum dolor sit amet consectetur adipisicing elit. Mollitia, commodi provident dolores vitae sapiente repellendus labore. Illum consectetur placeat eos nobis? Blanditiis, est dolorum. Incidunt veritatis ea tenetur suscipit officia? "
+        >0</span
+      >
+    </h3>
     <div class="container">
-      <ul id="chatlist">
-        <!-- <li class="s1">Hi</li>
-        <li class="s2">hello</li> -->
-      </ul>
+      <ul id="chatlist"></ul>
 
       <div class="sendsection">
         <input id="texts" />
@@ -103,39 +34,109 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
+      const usercount = document.getElementById("usercount");
       const chatlist = document.getElementById("chatlist");
       const sendBtn = document.getElementById("send");
       const textareas = document.getElementById("texts");
-      var sound = new Audio('/sound');
-
+      const userName = document.getElementById("userName");
+      const groupName = document.getElementById("groupName");
+      var nameOfGroup = "";
+      var nameOfUser = "";
+      const sound = new Audio("/sound");
       let socket = io();
 
+      // set username
+
+      if (localStorage.getItem("username")) {
+        nameOfUser = localStorage.getItem("username");
+        userName.innerHTML = localStorage.getItem("username");
+      } else {
+        nameOfUser = "unknown";
+        userName.innerHTML = nameOfUser;
+      }
+      function setUname() {
+        const uname = prompt("Your Name");
+        if (uname != null) {
+          localStorage.setItem("username", uname);
+          userName.innerHTML = uname;
+        }
+      }
+
+      // set groupname
+      if (localStorage.getItem("groupname")) {
+        groupName.innerHTML = localStorage.getItem("groupname");
+      }
+      function setGroup() {
+        const gname = prompt("Group Name");
+        if (gname != null) {
+          localStorage.setItem("groupname", gname);
+          groupName.innerHTML = gname;
+        }
+      }
+      // group and uname check
+      if (localStorage.getItem("groupname") === null) {
+        setGroup();
+      }
+      if (localStorage.getItem("username") === null) {
+        setUname();
+      }
+
+      // make group
+      var nameOfGroup = "allpublic";
+      if (localStorage.getItem("groupname") === null) {
+        socket.emit("group-name", nameOfGroup);
+      } else {
+        nameOfGroup = localStorage.getItem("groupname");
+        socket.emit("group-name", [nameOfGroup, nameOfUser]);
+      }
+      // joined user count
+      socket.on(nameOfGroup, (counted) => {
+        usercount.innerHTML = counted[0];
+      });
+      // leave msg
+      socket.on("leavemsg", (msg) => {
+        socket.emit("group-name", [nameOfGroup,nameOfUser]);
+      });
+
+      // Enter click msg send
       window.addEventListener("keydown", (event) => {
         if (event.keyCode === 13) {
           sendMessage();
         }
       });
+      // send message
       function sendMessage() {
         if (textareas.value != " " && textareas.value !== "") {
           let newmsg = textareas.value;
-          socket.emit("chat", { textmsg: newmsg, userid: socket.id });
+          socket.emit("chat", {
+            textmsg: newmsg,
+            userid: socket.id,
+            groupid: nameOfGroup,
+            username: nameOfUser,
+          });
           textareas.value = "";
         }
       }
+
+      // chat transfer to server
       socket.on("chat-transfer", (msg) => {
+        let iam = "";
         let li = document.createElement("li");
         if (msg[1] === socket.id) {
           li.classList.add("s2");
         } else {
-           sound.play();
+          sound.play();
           li.classList.add("s1");
+          iam = msg[2].slice(0, 1) + ": ";
         }
 
-        li.textContent = msg[0];
+        li.textContent = iam + msg[0];
 
         chatlist.appendChild(li);
-        chatlist.scrollTo(0,chatlist.scrollHeight);
-    });
+        chatlist.scrollTo(0, chatlist.scrollHeight);
+      });
     </script>
+
+
   </body>
 </html>
