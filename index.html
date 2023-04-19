@@ -8,14 +8,46 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1,user-scalable=no"
     />
     <title>Message</title>
+    <link
+      rel="shortcut icon"
+      href="img/IM-message-logo.png"
+      type="image/x-icon"
+    />
+    <link rel="manifest" href="manifest.json" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/fontawesome.min.css"
+      integrity="sha512-SgaqKKxJDQ/tAUAAXzvxZz33rmn7leYDYfBP+YoMRSENhf3zJyx3SBASt/OfeQwBHA1nxMis7mM3EV/oYT6Fdw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"
+      integrity="sha512-fD9DI5bZwQxOi7MhYWnnNPlvXdp/2Pj3XSTRrFs5FQa4mizyGLnJcN6tuvUS6LbmgN1ut+XGSABKvjN0H6Aoow=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/fontawesome.min.js"
+      integrity="sha512-c41hNYfKMuxafVVmh5X3N/8DiGFFAV/tU2oeNk+upk/dfDAdcbx5FrjFOkFhe4MOLaKlujjkyR4Yn7vImrXjzQ=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
 
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
-    <h2>AHR Chat</h2>
+    <h2>AHR Chat <i class="fa-brands fa-facebook-messenger"></i></h2>
     <h3>
-      <span id="groupName" ondblclick="setGroup();">Group Name</span>
-      <span id="userName" ondblclick="setUname();">Name</span>
+      <span id="groupName" onclick="setGroup();">Group Name</span>
+      <span id="userName" onclick="setUname();">Name</span>
 
       <span
         id="usercount"
@@ -26,9 +58,29 @@
     <div class="container">
       <ul id="chatlist"></ul>
 
+      <p id="typingsome"></p>
       <div class="sendsection">
+        <button class="btnsend active" id="imageuploadbtn">
+          <i class="fa-solid fa-file-import"></i>
+        </button>
         <input id="texts" />
-        <button id="send" onclick="sendMessage();">Send</button>
+        <audio src="" id="audioPlayer"></audio>
+        <input type="file" id="fileInp" onchange="sendFiles(this)" />
+        <button class="btnsend" id="send" onclick="sendMessage();">
+          <i class="fa fa-paper-plane"></i>
+        </button>
+        <button class="btnsend active" id="voicesend">
+          <i class="fa fa-microphone"></i>
+        </button>
+        <button class="btnsend" id="voicestop">
+          <i class="fa fa-square"></i>
+        </button>
+        <button class="btnsend" id="voiceplay">
+          <i class="fa fa-play"></i>
+        </button>
+        <button class="btnsend" id="voicereRecord">
+          <i class="fa fa-rotate-left"></i>
+        </button>
       </div>
     </div>
 
@@ -36,17 +88,50 @@
     <script>
       const usercount = document.getElementById("usercount");
       const chatlist = document.getElementById("chatlist");
+      const typing= document.getElementById('typingsome');
+      const fileInp = document.getElementById("fileInp");
+      const imageuploadbtn = document.getElementById("imageuploadbtn");
       const sendBtn = document.getElementById("send");
+      const sendVoiceBtn = document.getElementById("voicesend");
+      const stopVoiceBtn = document.getElementById("voicestop");
+      const playVoiceBtn = document.getElementById("voiceplay");
+      var audioPlayer = document.getElementById("audioPlayer");
       const textareas = document.getElementById("texts");
       const userName = document.getElementById("userName");
       const groupName = document.getElementById("groupName");
-      var nameOfGroup = "";
-      var nameOfUser = "";
+      var nameOfGroup, nameOfUser, audiosrc;
       const sound = new Audio("/sound");
       let socket = io();
 
+      // text send btn show
+      textareas.addEventListener("keyup", (e) => {
+        if (textareas.value !== "") {
+          sendVoiceBtn.classList.remove("active");
+          sendBtn.classList.add("active");
+          socket.emit("typing", {
+            status:1,
+            groupid: nameOfGroup,
+            username: nameOfUser
+          });
+        } else {
+          sendVoiceBtn.classList.add("active");
+          sendBtn.classList.remove("active");
+          socket.emit("typing", {
+            status: 0,
+            groupid: nameOfGroup,
+            username: nameOfUser
+          });
+        }
+      });
+      socket.on('sometype',(nameoftyper)=>{
+        if(nameoftyper === 0){
+          typing.innerHTML =' ';
+        }else{
+          typing.innerHTML =`${nameoftyper} typing...`;
+        }
+        
+      });
       // set username
-
       if (localStorage.getItem("username")) {
         nameOfUser = localStorage.getItem("username");
         userName.innerHTML = localStorage.getItem("username");
@@ -95,7 +180,7 @@
       });
       // leave msg
       socket.on("leavemsg", (msg) => {
-        socket.emit("group-name", [nameOfGroup,nameOfUser]);
+        socket.emit("group-name", [nameOfGroup, nameOfUser]);
       });
 
       // Enter click msg send
@@ -108,17 +193,20 @@
       function sendMessage() {
         if (textareas.value != " " && textareas.value !== "") {
           let newmsg = textareas.value;
+          sendBtn.classList.remove("active");
+          sendVoiceBtn.classList.add("active");
           socket.emit("chat", {
             textmsg: newmsg,
             userid: socket.id,
             groupid: nameOfGroup,
             username: nameOfUser,
+            type: "text",
           });
           textareas.value = "";
         }
       }
 
-      // chat transfer to server
+      // chat transfer from server
       socket.on("chat-transfer", (msg) => {
         let iam = "";
         let li = document.createElement("li");
@@ -129,14 +217,105 @@
           li.classList.add("s1");
           iam = msg[2].slice(0, 1) + ": ";
         }
-
-        li.textContent = iam + msg[0];
+        if (msg[3] === "text") {
+          if (msg[0].includes("https://")) {
+            let webimg=`https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${msg[0]}`;
+            li.innerHTML = `${iam} <img class="favi" src='${webimg}'/> <a href='${msg[0]}' target='_blank'>${msg[0]}</a>`;
+          } else {
+            li.textContent = iam + msg[0];
+          }
+        } else if (msg[3] === "audio") {
+          li.innerHTML = `${iam} <audio src="${msg[0]}" controls></audio>`;
+        } else if (msg[3] === "photo") {
+          li.innerHTML = `${iam} <img src="${msg[0]}" />`;
+        }
 
         chatlist.appendChild(li);
         chatlist.scrollTo(0, chatlist.scrollHeight);
       });
+
+      // voice message
+
+      let chunks = [];
+      let recorder, streamValue;
+
+      sendVoiceBtn.addEventListener("click", recordA);
+      function recordA() {
+        chunks = [];
+        audiosrc = "";
+        let device = navigator.mediaDevices.getUserMedia({ audio: true });
+        device.then((stream) => {
+          if (recorder === undefined) {
+            recorder = new MediaRecorder(stream);
+
+            recorder.ondataavailable = (e) => {
+              chunks.push(e.data);
+
+              if (recorder.state === "inactive") {
+                let blob = new Blob(chunks, { type: "audio/webm" });
+
+                var reader = new FileReader();
+                reader.addEventListener("load", (e) => {
+                  sendVoice(reader.result);
+                });
+                reader.readAsDataURL(blob);
+              }
+            };
+            recorder.start();
+          }
+          streamValue = stream;
+        });
+
+        stopVoiceBtn.classList.add("active");
+        sendVoiceBtn.classList.remove("active");
+      }
+      stopVoiceBtn.addEventListener("click", stopA);
+      function stopA() {
+        stopVoiceBtn.classList.remove("active");
+        // playVoiceBtn.classList.add("active");
+        sendBtn.classList.add("active");
+        // voicereRecord.classList.add("active");
+
+        recorder.stop();
+        streamValue.getTracks().forEach((track) => {
+          track.stop();
+        });
+      }
+      function sendVoice(vl) {
+        sendBtn.classList.remove("active");
+        sendVoiceBtn.classList.add("active");
+        socket.emit("voice", {
+          voicemsg: vl,
+          userid: socket.id,
+          groupid: nameOfGroup,
+          username: nameOfUser,
+          type: "audio",
+        });
+      }
+
+      //// send file
+      imageuploadbtn.addEventListener("click", () => {
+        fileInp.click();
+      });
+
+      function sendFiles(event) {
+        let file = event.files[0];
+        if (!file.type.match("image.*")) {
+          alert("only image can send");
+        } else {
+          let reader = new FileReader();
+          reader.addEventListener("load", () => {
+            socket.emit("chat", {
+              textmsg: reader.result,
+              userid: socket.id,
+              groupid: nameOfGroup,
+              username: nameOfUser,
+              type: "photo",
+            });
+          });
+          reader.readAsDataURL(file);
+        }
+      }
     </script>
-
-
   </body>
 </html>

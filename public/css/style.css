@@ -45,14 +45,17 @@
     display: none;
   }
   #chatlist li {
-    padding: 2px 5px;
-    border-radius: 30px;
+    padding: 5px 5px;
+    border-radius: 9px;
     color: white;
     margin: 3px 0;
+    display: flex;
+    max-width: 90%;
+    min-width: 3%;
+    text-align: left;
   }
   .s1 {
     text-align: left;
-
     background: linear-gradient(45deg, #ae16d0, #c94501);
     align-self: flex-start;
   }
@@ -61,11 +64,35 @@
     background: linear-gradient(45deg, #1a5881, #2cbb7b);
     align-self: flex-end;
   }
-  button#send {
+  #chatlist li img{
+    width: 200px;
+  }
+  a{
+    color: white;
+  }
+  .favi{
+    width: 30px !important;
+    height: 30px;
+    border: 2px solid #ede1e1;
+    border-radius: 40px;
+    margin: 0 5px;
+    background: white;
+  }
+  #typingsome{
+    color:#b2b2b2;
+  }
+  .btnsend {
     border: none;
     background: #71c3a4;
     padding: 10px;
     cursor: pointer;
+    display: none;
+  }
+  .btnsend.active{
+    display:initial;
+  }
+  .btnsend.pending{
+    background: #974900;
   }
   h2 {
     text-align: center;
@@ -96,4 +123,7 @@ span#groupName {
 }
 span#userName{
   cursor: pointer;
+}
+#fileInp{
+  display: none;
 }

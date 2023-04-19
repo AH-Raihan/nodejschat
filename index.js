@@ -13,7 +13,6 @@ io.on("connection", (socket) => {
     let groupn=groupName[0];
     let usern=groupName[1];
 
-
     // make group
     socket.join(groupn);
     let groupSize = io.sockets.adapter.rooms.get(groupName[0]).size;
@@ -24,10 +23,18 @@ io.on("connection", (socket) => {
     io.emit("leavemsg", "disconnected a user");
   });
 
+  socket.on("voice",(src)=>{
+    io.sockets.in(src.groupid).emit('chat-transfer',[src.voicemsg, src.userid, src.username,src.type]);
+  });
   socket.on("chat", (msg) => {
-    io.sockets
-      .in(msg.groupid)
-      .emit("chat-transfer", [msg.textmsg, msg.userid, msg.username]);
+    io.sockets.in(msg.groupid).emit("chat-transfer", [msg.textmsg, msg.userid, msg.username,msg.type]);
+  });
+  socket.on("typing", (msg) => {
+    if(msg.status===1){
+      io.sockets.in(msg.groupid).emit("sometype", msg.username);
+    }else{
+      io.sockets.in(msg.groupid).emit("sometype", 0);
+    }
   });
 });
 
