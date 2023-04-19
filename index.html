@@ -88,7 +88,7 @@
     <script>
       const usercount = document.getElementById("usercount");
       const chatlist = document.getElementById("chatlist");
-      const typing= document.getElementById('typingsome');
+      const typing = document.getElementById("typingsome");
       const fileInp = document.getElementById("fileInp");
       const imageuploadbtn = document.getElementById("imageuploadbtn");
       const sendBtn = document.getElementById("send");
@@ -109,9 +109,9 @@
           sendVoiceBtn.classList.remove("active");
           sendBtn.classList.add("active");
           socket.emit("typing", {
-            status:1,
+            status: 1,
             groupid: nameOfGroup,
-            username: nameOfUser
+            username: nameOfUser,
           });
         } else {
           sendVoiceBtn.classList.add("active");
@@ -119,17 +119,16 @@
           socket.emit("typing", {
             status: 0,
             groupid: nameOfGroup,
-            username: nameOfUser
+            username: nameOfUser,
           });
         }
       });
-      socket.on('sometype',(nameoftyper)=>{
-        if(nameoftyper === 0){
-          typing.innerHTML =' ';
-        }else{
-          typing.innerHTML =`${nameoftyper} typing...`;
+      socket.on("sometype", (nameoftyper) => {
+        if (nameoftyper === 0) {
+          typing.innerHTML = " ";
+        } else {
+          typing.innerHTML = `${nameoftyper} typing...`;
         }
-        
       });
       // set username
       if (localStorage.getItem("username")) {
@@ -219,7 +218,7 @@
         }
         if (msg[3] === "text") {
           if (msg[0].includes("https://")) {
-            let webimg=`https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${msg[0]}`;
+            let webimg = `https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${msg[0]}`;
             li.innerHTML = `${iam} <img class="favi" src='${webimg}'/> <a href='${msg[0]}' target='_blank'>${msg[0]}</a>`;
           } else {
             li.textContent = iam + msg[0];
@@ -232,6 +231,17 @@
 
         chatlist.appendChild(li);
         chatlist.scrollTo(0, chatlist.scrollHeight);
+
+        
+        //  save last chat
+        let messag = `${msg[2]}: ${msg[0]}`;
+        let lastchats = JSON.parse(localStorage.getItem("lastchat"));
+        if (lastchats.length > 5) {
+          lastchats.shift();
+        }
+        lastchats.push(messag);
+        localStorage.setItem("lastchat", JSON.stringify(lastchats));
+
       });
 
       // voice message
@@ -315,6 +325,28 @@
           });
           reader.readAsDataURL(file);
         }
+      }
+
+      // last chat
+      if (localStorage.getItem("lastchat")) {
+        let chats =JSON.parse(localStorage.getItem("lastchat"));
+        if(chats.length > 1){
+          for(let i=0;i< chats.length;i++){
+            if(chats[i].includes('data:image/jp')){
+              let trimChat = chats[i].replace(/([\w])+:\sdata:/,"data:");
+              chatlist.innerHTML += `<li class="s1"><img src='${trimChat}'/></li>`;
+            }else if(chats[i].includes('data:audio/webm')){
+              let trimAChat = chats[i].replace(/([\w])+:\sdata:/,"data:");
+              chatlist.innerHTML += `<li class="s1"><audio src='${trimAChat}' controls></audio></li>`;
+            }else{
+              chatlist.innerHTML += `<li class="s1">${chats[i]}</li>`;
+            }
+        }
+        }
+        
+        
+      } else {
+        localStorage.setItem("lastchat", JSON.stringify([]));
       }
     </script>
   </body>
