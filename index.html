@@ -7,7 +7,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1,user-scalable=no"
     />
-    <title>Message</title>
+    <title>Chat.R Message</title>
     <link
       rel="shortcut icon"
       href="img/IM-message-logo.png"
@@ -44,7 +44,7 @@
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
-    <h2>AHR Chat <i class="fa-brands fa-facebook-messenger"></i></h2>
+    <h2>Chat.R <i class="fa-brands fa-facebook-messenger"></i></h2>
     <h3>
       <span id="groupName" onclick="setGroup();">Group Name</span>
       <span id="userName" onclick="setUname();">Name</span>
@@ -166,7 +166,7 @@
       }
 
       // make group
-      var nameOfGroup = "allpublic";
+      var nameOfGroup = "public";
       if (localStorage.getItem("groupname") === null) {
         socket.emit("group-name", nameOfGroup);
       } else {
@@ -236,7 +236,7 @@
         //  save last chat
         let messag = `${msg[2]}: ${msg[0]}`;
         let lastchats = JSON.parse(localStorage.getItem("lastchat"));
-        if (lastchats.length > 5) {
+        if (lastchats.length > 4) {
           lastchats.shift();
         }
         lastchats.push(messag);
@@ -262,7 +262,7 @@
               chunks.push(e.data);
 
               if (recorder.state === "inactive") {
-                let blob = new Blob(chunks, { type: "audio/webm" });
+                let blob = new Blob(chunks, { type: "audio/mpeg" });
 
                 var reader = new FileReader();
                 reader.addEventListener("load", (e) => {
@@ -332,10 +332,10 @@
         let chats =JSON.parse(localStorage.getItem("lastchat"));
         if(chats.length > 1){
           for(let i=0;i< chats.length;i++){
-            if(chats[i].includes('data:image/jp')){
+            if(chats[i].includes('data:image/')){
               let trimChat = chats[i].replace(/([\w])+:\sdata:/,"data:");
               chatlist.innerHTML += `<li class="s1"><img src='${trimChat}'/></li>`;
-            }else if(chats[i].includes('data:audio/webm')){
+            }else if(chats[i].includes('data:audio/')){
               let trimAChat = chats[i].replace(/([\w])+:\sdata:/,"data:");
               chatlist.innerHTML += `<li class="s1"><audio src='${trimAChat}' controls></audio></li>`;
             }else{
