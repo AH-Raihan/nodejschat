@@ -262,7 +262,7 @@
               chunks.push(e.data);
 
               if (recorder.state === "inactive") {
-                let blob = new Blob(chunks, { type: "audio/mpeg" });
+                let blob = new Blob(chunks, { type: "audio/webm" });
 
                 var reader = new FileReader();
                 reader.addEventListener("load", (e) => {
