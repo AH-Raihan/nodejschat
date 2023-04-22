@@ -261,7 +261,7 @@
             recorder.ondataavailable = (e) => {
               chunks.push(e.data);
 
-              if (recorder.state == "inactive") {
+              if (recorder.state === "inactive") {
                 let blob = new Blob(chunks, { type: "audio/webm" });
 
                 var reader = new FileReader();
@@ -287,9 +287,9 @@
         // voicereRecord.classList.add("active");
 
         recorder.stop();
-        streamValue.getTracks().forEach((track) => {
-          track.stop();
-        });
+        //streamValue.getTracks().forEach//((track) => {
+         // track.stop();
+        //});
       }
       function sendVoice(vl) {
         sendBtn.classList.remove("active");
