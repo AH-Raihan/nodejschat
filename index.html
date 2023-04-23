@@ -99,6 +99,7 @@
       const textareas = document.getElementById("texts");
       const userName = document.getElementById("userName");
       const groupName = document.getElementById("groupName");
+      let userAgent=navigator.userAgent;
       var nameOfGroup, nameOfUser, audiosrc;
       const sound = new Audio("/sound");
       let socket = io();
@@ -166,7 +167,7 @@
       }
 
       // make group
-      var nameOfGroup = "allpublic";
+      var nameOfGroup = "public";
       if (localStorage.getItem("groupname") === null) {
         socket.emit("group-name", nameOfGroup);
       } else {
@@ -224,6 +225,7 @@
             li.textContent = iam + msg[0];
           }
         } else if (msg[3] === "audio") {
+          
           li.innerHTML = `${iam} <audio src="${msg[0]}" controls></audio>`;
         } else if (msg[3] === "photo") {
           li.innerHTML = `${iam} <img src="${msg[0]}" />`;
@@ -248,6 +250,7 @@
 
       let chunks = [];
       let recorder, streamValue;
+      
 
       sendVoiceBtn.addEventListener("click", recordA);
       function recordA() {
@@ -260,36 +263,35 @@
 
             recorder.ondataavailable = (e) => {
               chunks.push(e.data);
-
               if (recorder.state === "inactive") {
-                let blob = new Blob(chunks, { type: "audio/webm" });
+                let audiotype="audio/webm";
+                let blob = new Blob(chunks, { type: audiotype });
 
                 var reader = new FileReader();
                 reader.addEventListener("load", (e) => {
                   sendVoice(reader.result);
+                  
                 });
                 reader.readAsDataURL(blob);
               }
-            };
-            recorder.start();
+            }
+            
           }
+          recorder.start();
           streamValue = stream;
         });
 
         stopVoiceBtn.classList.add("active");
         sendVoiceBtn.classList.remove("active");
       }
+      
       stopVoiceBtn.addEventListener("click", stopA);
       function stopA() {
         stopVoiceBtn.classList.remove("active");
-        // playVoiceBtn.classList.add("active");
         sendBtn.classList.add("active");
-        // voicereRecord.classList.add("active");
-
+        
         recorder.stop();
-        streamValue.getTracks().forEach((track) => {
-          track.stop();
-        });
+        //streamValue.getTracks()[0].stop();
       }
       function sendVoice(vl) {
         sendBtn.classList.remove("active");
@@ -332,11 +334,16 @@
         let chats =JSON.parse(localStorage.getItem("lastchat"));
         if(chats.length > 1){
           for(let i=0;i< chats.length;i++){
-            if(chats[i].includes('data:image/jp')){
+            if(chats[i].includes('data:image/')){
               let trimChat = chats[i].replace(/([\w])+:\sdata:/,"data:");
               chatlist.innerHTML += `<li class="s1"><img src='${trimChat}'/></li>`;
-            }else if(chats[i].includes('data:audio/webm')){
-              let trimAChat = chats[i].replace(/([\w])+:\sdata:/,"data:");
+            }else if(chats[i].includes('data:audio/')){
+              if (userAgent.includes('Safari')) {
+                  att= "data:audio/mpeg" ;
+                }else{
+                  att= "data:audio/webm" ;
+                };
+              let trimAChat = chats[i].replace(/([\w])+:\sdata:audio\/webm/,att);
               chatlist.innerHTML += `<li class="s1"><audio src='${trimAChat}' controls></audio></li>`;
             }else{
               chatlist.innerHTML += `<li class="s1">${chats[i]}</li>`;
