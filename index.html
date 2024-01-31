@@ -238,7 +238,7 @@
         //  save last chat
         let messag = `${msg[2]}: ${msg[0]}`;
         let lastchats = JSON.parse(localStorage.getItem("lastchat"));
-        if (lastchats.length > 5) {
+        if (lastchats.length > 40) {
           lastchats.shift();
         }
         lastchats.push(messag);
