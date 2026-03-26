@@ -1,359 +1,914 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1,user-scalable=no"
-    />
-    <title>Message</title>
-    <link
-      rel="shortcut icon"
-      href="img/IM-message-logo.png"
-      type="image/x-icon"
-    />
-    <link rel="manifest" href="manifest.json" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-      integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/fontawesome.min.css"
-      integrity="sha512-SgaqKKxJDQ/tAUAAXzvxZz33rmn7leYDYfBP+YoMRSENhf3zJyx3SBASt/OfeQwBHA1nxMis7mM3EV/oYT6Fdw=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    />
-    <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"
-      integrity="sha512-fD9DI5bZwQxOi7MhYWnnNPlvXdp/2Pj3XSTRrFs5FQa4mizyGLnJcN6tuvUS6LbmgN1ut+XGSABKvjN0H6Aoow=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    ></script>
-    <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/fontawesome.min.js"
-      integrity="sha512-c41hNYfKMuxafVVmh5X3N/8DiGFFAV/tU2oeNk+upk/dfDAdcbx5FrjFOkFhe4MOLaKlujjkyR4Yn7vImrXjzQ=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    ></script>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1,user-scalable=no" />
+    <title>Relic Chat</title>
+    <link rel="shortcut icon" href="img/IM-message-logo.png" type="image/x-icon" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="css/style.css" />
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+      import {
+        getAuth,
+        signInAnonymously,
+        onAuthStateChanged,
+        createUserWithEmailAndPassword,
+        signInWithEmailAndPassword,
+        updateProfile,
+        signOut,
+        GoogleAuthProvider,
+        signInWithPopup,
+      } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+      import {
+        getDatabase,
+        ref as dRef,
+        push,
+        onChildAdded,
+        onChildRemoved,
+        remove,
+        serverTimestamp,
+        get,
+        set,
+        child,
+      } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+
+      window.firebaseModules = {
+        initializeApp,
+        getAuth,
+        signInAnonymously,
+        onAuthStateChanged,
+        createUserWithEmailAndPassword,
+        signInWithEmailAndPassword,
+        updateProfile,
+        signOut,
+        GoogleAuthProvider,
+        signInWithPopup,
+        getDatabase,
+        dRef,
+        push,
+        onChildAdded,
+        onChildRemoved,
+        remove,
+        serverTimestamp,
+        get,
+        set,
+        child,
+      };
+    </script>
+
+    <style>
+      /* Auth Tabs */
+      .auth-tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .auth-tab {
+        flex: 1;
+        padding: 10px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--glass-border);
+        border-radius: 8px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.2s;
+      }
+      .auth-tab.active {
+        background: rgba(255, 255, 255, 0.15);
+        color: var(--text-primary);
+        border-color: var(--primary-color);
+      }
+      .auth-section {
+        display: none;
+      }
+      .auth-section.active {
+        display: block;
+      }
+
+      /* Media Preview Section */
+      #mediaPreviewContainer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 10px 15px;
+        border-radius: 12px;
+        margin-bottom: 15px;
+        border: 1px solid var(--glass-border);
+      }
+      #mediaPreviewContent img {
+        height: 60px;
+        border-radius: 8px;
+        object-fit: cover;
+      }
+      #mediaPreviewContent audio {
+        height: 40px;
+        outline: none;
+      }
+      #mediaPreviewContent .file-preview {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.9rem;
+        color: var(--text-primary);
+      }
+    </style>
   </head>
   <body>
-    <h2>AHR Chat <i class="fa-brands fa-facebook-messenger"></i></h2>
-    <h3>
-      <span id="groupName" onclick="setGroup();">Group Name</span>
-      <span id="userName" onclick="setUname();">Name</span>
+    <!-- Main App -->
+    <div class="app-wrapper">
+      <!-- Sidebar -->
+      <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <h2>Relic Chat</h2>
+        </div>
 
-      <span
-        id="usercount"
-        title="Lorem ipsum dolor sit amet consectetur adipisicing elit. Mollitia, commodi provident dolores vitae sapiente repellendus labore. Illum consectetur placeat eos nobis? Blanditiis, est dolorum. Incidunt veritatis ea tenetur suscipit officia? "
-        >0</span
-      >
-    </h3>
-    <div class="container">
-      <ul id="chatlist"></ul>
+        <div class="sidebar-section">
+          <div class="section-header">
+            <h3>Channels</h3>
+            <button onclick="promptJoinNewGroup()" title="Join New Group"><i class="fas fa-plus"></i></button>
+          </div>
+          <div class="channels-list" id="channelsListDOM">
+            <!-- Channels rendered here -->
+          </div>
+        </div>
 
-      <p id="typingsome"></p>
-      <div class="sendsection">
-        <button class="btnsend active" id="imageuploadbtn">
-          <i class="fa-solid fa-file-import"></i>
-        </button>
-        <input id="texts" />
-        <audio src="" id="audioPlayer"></audio>
-        <input type="file" id="fileInp" onchange="sendFiles(this)" />
-        <button class="btnsend" id="send" onclick="sendMessage();">
-          <i class="fa fa-paper-plane"></i>
-        </button>
-        <button class="btnsend active" id="voicesend">
-          <i class="fa fa-microphone"></i>
-        </button>
-        <button class="btnsend" id="voicestop">
-          <i class="fa fa-square"></i>
-        </button>
-        <button class="btnsend" id="voiceplay">
-          <i class="fa fa-play"></i>
-        </button>
-        <button class="btnsend" id="voicereRecord">
-          <i class="fa fa-rotate-left"></i>
-        </button>
+        <div class="sidebar-section online-users-container">
+          <h3>Online (<span id="usercount">0</span>)</h3>
+          <div id="onlineUsersList"></div>
+        </div>
+
+        <div class="user-controls">
+          <p style="margin-bottom: 10px; color: var(--text-secondary); font-size: 0.9rem">
+            Logged in as: <br /><strong id="userNameLabel" style="color: white">...</strong>
+          </p>
+          <button class="btn-secondary" onclick="logOut()">Sign Out</button>
+        </div>
+      </div>
+
+      <!-- Chat Area -->
+      <div class="chat-area">
+        <div class="chat-header">
+          <button class="hamburger" id="hamburgerBtn"><i class="fas fa-bars"></i></button>
+          <div class="chat-title">
+            <h3 id="chatRoomTitle">Select a Group</h3>
+            <p class="chat-subtitle">Relic Chat</p>
+          </div>
+          <div>
+            <button
+              class="btn-action"
+              style="background: transparent; border: none"
+              onclick="toggleNotifications()"
+              title="Toggle Notifications"
+              id="notifToggleBtn">
+              <i class="fas fa-bell"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="messages-container" id="chatlist"></div>
+
+        <div class="typing-indicator" id="typingsome"></div>
+
+        <!-- Input Area spanning bottom -->
+        <div class="input-area" style="flex-direction: column; align-items: stretch; gap: 5px; padding-bottom: 15px">
+          <div
+            id="uploadProgress"
+            class="hidden"
+            style="font-size: 0.85rem; color: var(--primary-color); text-align: center">
+            Processing media... please wait.
+          </div>
+
+          <!-- Media Preview (Hidden by default) -->
+          <div id="mediaPreviewContainer" class="hidden">
+            <div id="mediaPreviewContent"></div>
+            <div style="display: flex; gap: 10px">
+              <button class="btn-action" id="cancelMediaBtn" style="background: var(--error-color)" title="Delete">
+                <i class="fa fa-trash"></i>
+              </button>
+              <button class="btn-action btn-primary" id="sendMediaBtn" title="Send">
+                <i class="fa fa-paper-plane"></i>
+              </button>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 10px; width: 100%; align-items: center">
+            <button class="btn-action" id="fileuploadbtn" title="Upload Attachment (Image/Video/File)">
+              <i class="fa-solid fa-paperclip"></i>
+            </button>
+            <input type="file" id="fileInp" style="display: none" />
+
+            <button class="btn-action" id="voiceBtn" title="Click to Record Voice / Click to Stop">
+              <i class="fa-solid fa-microphone"></i>
+            </button>
+
+            <input type="text" id="texts" placeholder="Type a message..." autocomplete="off" />
+
+            <button class="btn-action btn-primary" id="sendBtn" onclick="sendMessage()">
+              <i class="fa fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <audio id="sound" src="/sound"></audio>
+
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="loginModal">
+      <div class="modal-content">
+        <h3>Welcome to Relic Chat</h3>
+        <div class="auth-tabs">
+          <div class="auth-tab active" onclick="switchTab('login')">Login</div>
+          <div class="auth-tab" onclick="switchTab('register')">Register</div>
+          <div class="auth-tab" onclick="switchTab('guest')">Guest</div>
+        </div>
+
+        <!-- Login -->
+        <div id="sec-login" class="auth-section active">
+          <div class="form-group">
+            <label>Email Address</label><input type="email" id="loginEmail" placeholder="you@example.com" />
+          </div>
+          <div class="form-group">
+            <label>Password</label><input type="password" id="loginPass" placeholder="••••••••" />
+          </div>
+          <p class="text-error" id="loginErrorMsg"></p>
+          <button class="btn-full" onclick="handleAuth('login')">Login to Relic Chat</button>
+
+          <div style="text-align: center; margin: 15px 0; color: var(--text-secondary); font-size: 0.9rem">OR</div>
+          <button
+            class="btn-full"
+            style="
+              background: white;
+              color: black;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 10px;
+            "
+            onclick="handleAuth('google')">
+            <i class="fab fa-google" style="color: #4285f4; font-size: 1.2rem"></i> Continue with Google
+          </button>
+        </div>
+
+        <!-- Register -->
+        <div id="sec-register" class="auth-section">
+          <div class="form-group">
+            <label>Your Display Name</label><input type="text" id="regName" placeholder="Enter your display name" />
+          </div>
+          <div class="form-group">
+            <label>Email Address</label><input type="email" id="regEmail" placeholder="you@example.com" />
+          </div>
+          <div class="form-group">
+            <label>Password</label><input type="password" id="regPass" placeholder="••••••••" />
+          </div>
+          <p class="text-error" id="regErrorMsg"></p>
+          <button class="btn-full" onclick="handleAuth('register')">Create Account & Join</button>
+
+          <div style="text-align: center; margin: 15px 0; color: var(--text-secondary); font-size: 0.9rem">OR</div>
+          <button
+            class="btn-full"
+            style="
+              background: white;
+              color: black;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 10px;
+            "
+            onclick="handleAuth('google')">
+            <i class="fab fa-google" style="color: #4285f4; font-size: 1.2rem"></i> Continue with Google
+          </button>
+        </div>
+
+        <!-- Guest -->
+        <div id="sec-guest" class="auth-section">
+          <div class="form-group">
+            <label>Your Name</label><input type="text" id="guestNameInput" placeholder="Enter your display name" />
+          </div>
+          <p class="text-error" id="guestErrorMsg"></p>
+          <button class="btn-full" onclick="handleAuth('guest')">Join as Guest</button>
+        </div>
       </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-      const usercount = document.getElementById("usercount");
-      const chatlist = document.getElementById("chatlist");
-      const typing = document.getElementById("typingsome");
-      const fileInp = document.getElementById("fileInp");
-      const imageuploadbtn = document.getElementById("imageuploadbtn");
-      const sendBtn = document.getElementById("send");
-      const sendVoiceBtn = document.getElementById("voicesend");
-      const stopVoiceBtn = document.getElementById("voicestop");
-      const playVoiceBtn = document.getElementById("voiceplay");
-      var audioPlayer = document.getElementById("audioPlayer");
-      const textareas = document.getElementById("texts");
-      const userName = document.getElementById("userName");
-      const groupName = document.getElementById("groupName");
-      let userAgent=navigator.userAgent;
-      var nameOfGroup, nameOfUser, audiosrc;
-      const sound = new Audio("/sound");
       let socket = io();
+      let nameOfUser = "";
 
-      // text send btn show
-      textareas.addEventListener("keyup", (e) => {
-        if (textareas.value !== "") {
-          sendVoiceBtn.classList.remove("active");
-          sendBtn.classList.add("active");
-          socket.emit("typing", {
-            status: 1,
-            groupid: nameOfGroup,
-            username: nameOfUser,
-          });
+      // Multi-group state
+      let joinedGroups = [];
+      let activeGroup = "";
+      let groupMessages = {}; // { "public": [{msg_objects...}] }
+      let unreadCounts = {}; // { "public": 0 }
+      let groupListenersEnabled = {}; // { "public": true }
+
+      let isFirebaseEnabled = false;
+      let auth, db;
+      let isRecording = false;
+      let mediaRecorder;
+      let audioChunks = [];
+      let notificationsMuted = localStorage.getItem("notificationsMuted") === "true";
+
+      // Media Preview State
+      let pendingMediaFile = null;
+      let pendingMediaType = "file";
+
+      const loginModal = document.getElementById("loginModal");
+      const chatlist = document.getElementById("chatlist");
+      const texts = document.getElementById("texts");
+      const typingsome = document.getElementById("typingsome");
+      const onlineUsersList = document.getElementById("onlineUsersList");
+      const usercount = document.getElementById("usercount");
+      const channelsListDOM = document.getElementById("channelsListDOM");
+
+      const fileInp = document.getElementById("fileInp");
+      const fileUploadBtn = document.getElementById("fileuploadbtn");
+      const voiceBtn = document.getElementById("voiceBtn");
+      const mediaPreviewContainer = document.getElementById("mediaPreviewContainer");
+      const mediaPreviewContent = document.getElementById("mediaPreviewContent");
+      const cancelMediaBtn = document.getElementById("cancelMediaBtn");
+      const sendMediaBtn = document.getElementById("sendMediaBtn");
+
+      const uploadProgress = document.getElementById("uploadProgress");
+      const sound = document.getElementById("sound");
+      const sidebar = document.getElementById("sidebar");
+      const notifToggleBtn = document.getElementById("notifToggleBtn");
+
+      function updateNotifUI() {
+        if (notificationsMuted) {
+          notifToggleBtn.innerHTML = '<i class="fas fa-bell-slash" style="color:var(--text-secondary);"></i>';
+          notifToggleBtn.title = "Unmute Notifications";
         } else {
-          sendVoiceBtn.classList.add("active");
-          sendBtn.classList.remove("active");
-          socket.emit("typing", {
-            status: 0,
-            groupid: nameOfGroup,
-            username: nameOfUser,
+          notifToggleBtn.innerHTML = '<i class="fas fa-bell" style="color:var(--primary-color);"></i>';
+          notifToggleBtn.title = "Mute Notifications";
+        }
+      }
+      updateNotifUI();
+
+      function toggleNotifications() {
+        if (!notificationsMuted && Notification.permission !== "granted" && Notification.permission !== "denied") {
+          Notification.requestPermission().then((permission) => {
+            if (permission === "granted") {
+              notificationsMuted = false;
+              localStorage.setItem("notificationsMuted", "false");
+              updateNotifUI();
+            }
           });
+          return;
         }
-      });
-      socket.on("sometype", (nameoftyper) => {
-        if (nameoftyper === 0) {
-          typing.innerHTML = " ";
-        } else {
-          typing.innerHTML = `${nameoftyper} typing...`;
-        }
-      });
-      // set username
-      if (localStorage.getItem("username")) {
-        nameOfUser = localStorage.getItem("username");
-        userName.innerHTML = localStorage.getItem("username");
-      } else {
-        nameOfUser = "unknown";
-        userName.innerHTML = nameOfUser;
-      }
-      function setUname() {
-        const uname = prompt("Your Name");
-        if (uname != null) {
-          localStorage.setItem("username", uname);
-          userName.innerHTML = uname;
-        }
+        notificationsMuted = !notificationsMuted;
+        localStorage.setItem("notificationsMuted", notificationsMuted.toString());
+        updateNotifUI();
       }
 
-      // set groupname
-      if (localStorage.getItem("groupname")) {
-        groupName.innerHTML = localStorage.getItem("groupname");
-      }
-      function setGroup() {
-        const gname = prompt("Group Name");
-        if (gname != null) {
-          localStorage.setItem("groupname", gname);
-          groupName.innerHTML = gname;
-        }
-      }
-      // group and uname check
-      if (localStorage.getItem("groupname") === null) {
-        setGroup();
-      }
-      if (localStorage.getItem("username") === null) {
-        setUname();
+      document.getElementById("hamburgerBtn").addEventListener("click", () => sidebar.classList.toggle("mobile-open"));
+      chatlist.addEventListener("click", () => sidebar.classList.remove("mobile-open"));
+
+      function switchTab(tabId) {
+        document.querySelectorAll(".auth-tab").forEach((el) => el.classList.remove("active"));
+        document.querySelectorAll(".auth-section").forEach((el) => el.classList.remove("active"));
+        event.target.classList.add("active");
+        document.getElementById("sec-" + tabId).classList.add("active");
       }
 
-      // make group
-      var nameOfGroup = "public";
-      if (localStorage.getItem("groupname") === null) {
-        socket.emit("group-name", nameOfGroup);
-      } else {
-        nameOfGroup = localStorage.getItem("groupname");
-        socket.emit("group-name", [nameOfGroup, nameOfUser]);
-      }
-      // joined user count
-      socket.on(nameOfGroup, (counted) => {
-        usercount.innerHTML = counted[0];
-      });
-      // leave msg
-      socket.on("leavemsg", (msg) => {
-        socket.emit("group-name", [nameOfGroup, nameOfUser]);
-      });
+      function initFirebase() {
+        const firebaseConfig = {
+          apiKey: "AIzaSyC3iLDUiYTXmnDOkxOPKfkt6e6tMHxw1N4",
+          authDomain: "relic-chat-db670.firebaseapp.com",
+          databaseURL: "https://relic-chat-db670-default-rtdb.asia-southeast1.firebasedatabase.app/",
+          projectId: "relic-chat-db670",
+          storageBucket: "relic-chat-db670.firebasestorage.app",
+          messagingSenderId: "855710163536",
+          appId: "1:855710163536:web:bcfd9cb8a6561867216755",
+        };
 
-      // Enter click msg send
-      window.addEventListener("keydown", (event) => {
-        if (event.keyCode === 13) {
-          sendMessage();
-        }
-      });
-      // send message
-      function sendMessage() {
-        if (textareas.value != " " && textareas.value !== "") {
-          let newmsg = textareas.value;
-          sendBtn.classList.remove("active");
-          sendVoiceBtn.classList.add("active");
-          socket.emit("chat", {
-            textmsg: newmsg,
-            userid: socket.id,
-            groupid: nameOfGroup,
-            username: nameOfUser,
-            type: "text",
+        try {
+          if (!firebaseConfig.apiKey) throw new Error("No Firebase config provided");
+          const app = window.firebaseModules.initializeApp(firebaseConfig);
+          auth = window.firebaseModules.getAuth(app);
+          db = window.firebaseModules.getDatabase(app);
+          isFirebaseEnabled = true;
+
+          window.firebaseModules.onAuthStateChanged(auth, (user) => {
+            if (user) {
+              nameOfUser = user.displayName || user.email.split("@")[0] || "Guest";
+              checkLocalFallback(true);
+            } else {
+              checkLocalFallback(false);
+            }
           });
-          textareas.value = "";
+        } catch (err) {
+          console.warn("Firebase Init Error:", err.message);
+          isFirebaseEnabled = false;
+          checkLocalFallback(false);
         }
       }
 
-      // chat transfer from server
-      socket.on("chat-transfer", (msg) => {
-        let iam = "";
-        let li = document.createElement("li");
-        if (msg[1] === socket.id) {
-          li.classList.add("s2");
+      function checkLocalFallback(isAuthed) {
+        const u = localStorage.getItem("username");
+        if (u || isAuthed) {
+          nameOfUser = nameOfUser || u;
+          bootstrapApp();
         } else {
-          sound.play();
-          li.classList.add("s1");
-          iam = msg[2].slice(0, 1) + ": ";
+          loginModal.classList.add("active");
         }
-        if (msg[3] === "text") {
-          if (msg[0].includes("https://")) {
-            let webimg = `https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${msg[0]}`;
-            li.innerHTML = `${iam} <img class="favi" src='${webimg}'/> <a href='${msg[0]}' target='_blank'>${msg[0]}</a>`;
+      }
+
+      setTimeout(initFirebase, 500);
+
+      function handleAuth(method) {
+        if (method === "guest") {
+          let gName = document.getElementById("guestNameInput").value.trim();
+          if (!gName) return showErr("guestErrorMsg", "Please enter a name");
+          nameOfUser = gName;
+          if (isFirebaseEnabled)
+            window.firebaseModules
+              .signInAnonymously(auth)
+              .then(() => {
+                bootstrapApp();
+              })
+              .catch((e) => showErr("guestErrorMsg", e.message));
+          else bootstrapApp();
+        } else if (method === "login") {
+          let em = document.getElementById("loginEmail").value.trim();
+          let pw = document.getElementById("loginPass").value.trim();
+          if (!em || !pw) return showErr("loginErrorMsg", "Fill all fields");
+          if (isFirebaseEnabled) {
+            window.firebaseModules
+              .signInWithEmailAndPassword(auth, em, pw)
+              .then((cred) => {
+                nameOfUser = cred.user.displayName || em.split("@")[0];
+                bootstrapApp();
+              })
+              .catch((err) => showErr("loginErrorMsg", err.message));
           } else {
-            li.textContent = iam + msg[0];
+            showErr("loginErrorMsg", "Firebase Firebase failed! Use Guest.");
           }
-        } else if (msg[3] === "audio") {
-          
-          li.innerHTML = `${iam} <audio src="${msg[0]}" controls></audio>`;
-        } else if (msg[3] === "photo") {
-          li.innerHTML = `${iam} <img src="${msg[0]}" />`;
-        }
-
-        chatlist.appendChild(li);
-        chatlist.scrollTo(0, chatlist.scrollHeight);
-
-        
-        //  save last chat
-        let messag = `${msg[2]}: ${msg[0]}`;
-        let lastchats = JSON.parse(localStorage.getItem("lastchat"));
-        if (lastchats.length > 40) {
-          lastchats.shift();
-        }
-        lastchats.push(messag);
-        localStorage.setItem("lastchat", JSON.stringify(lastchats));
-
-      });
-
-      // voice message
-
-      let chunks = [];
-      let recorder, streamValue;
-      
-
-      sendVoiceBtn.addEventListener("click", recordA);
-      function recordA() {
-        chunks = [];
-        audiosrc = "";
-        let device = navigator.mediaDevices.getUserMedia({ audio: true });
-        device.then((stream) => {
-          if (recorder === undefined) {
-            recorder = new MediaRecorder(stream);
-
-            recorder.ondataavailable = (e) => {
-              chunks.push(e.data);
-              if (recorder.state === "inactive") {
-                let audiotype="audio/webm";
-                let blob = new Blob(chunks, { type: audiotype });
-
-                var reader = new FileReader();
-                reader.addEventListener("load", (e) => {
-                  sendVoice(reader.result);
-                  
+        } else if (method === "register") {
+          let nm = document.getElementById("regName").value.trim();
+          let em = document.getElementById("regEmail").value.trim();
+          let pw = document.getElementById("regPass").value.trim();
+          if (!nm || !em || !pw) return showErr("regErrorMsg", "Fill all fields");
+          if (isFirebaseEnabled) {
+            window.firebaseModules
+              .createUserWithEmailAndPassword(auth, em, pw)
+              .then((cred) => {
+                window.firebaseModules.updateProfile(cred.user, { displayName: nm }).then(() => {
+                  nameOfUser = nm;
+                  bootstrapApp();
                 });
-                reader.readAsDataURL(blob);
+              })
+              .catch((err) => showErr("regErrorMsg", err.message));
+          } else {
+            showErr("regErrorMsg", "Firebase failed! Use Guest.");
+          }
+        } else if (method === "google") {
+          if (isFirebaseEnabled) {
+            const provider = new window.firebaseModules.GoogleAuthProvider();
+            window.firebaseModules
+              .signInWithPopup(auth, provider)
+              .then((cred) => {
+                nameOfUser = cred.user.displayName || cred.user.email.split("@")[0];
+                bootstrapApp();
+              })
+              .catch((err) => showErr("loginErrorMsg", err.message));
+          } else {
+            showErr("loginErrorMsg", "Firebase Firebase failed! Use Guest.");
+          }
+        }
+      }
+
+      function showErr(id, msg) {
+        document.getElementById(id).innerText = msg;
+        document.getElementById(id).style.display = "block";
+      }
+
+      function bootstrapApp() {
+        localStorage.setItem("username", nameOfUser);
+        document.getElementById("userNameLabel").innerText = nameOfUser;
+        loginModal.classList.remove("active");
+
+        let saved = localStorage.getItem("joinedGroups");
+        joinedGroups = saved ? JSON.parse(saved) : ["public"];
+
+        activeGroup = localStorage.getItem("activeGroup");
+        if (!activeGroup || !joinedGroups.includes(activeGroup)) activeGroup = joinedGroups[0];
+
+        joinedGroups.forEach((g) => {
+          if (!groupMessages[g]) groupMessages[g] = [];
+          if (unreadCounts[g] === undefined) unreadCounts[g] = 0;
+          attachGroupListeners(g);
+        });
+
+        renderChannelsList();
+        switchToGroup(activeGroup);
+      }
+
+      function attachGroupListeners(group) {
+        if (!isFirebaseEnabled || groupListenersEnabled[group]) return;
+        groupListenersEnabled[group] = true;
+
+        const msgsRef = window.firebaseModules.dRef(db, "messages/" + group);
+
+        window.firebaseModules.onChildAdded(msgsRef, (snapshot) => {
+          const data = snapshot.val();
+          const msgObj = { ...data, key: snapshot.key };
+          groupMessages[group].push(msgObj);
+
+          const isMe = data.username === nameOfUser;
+
+          if (activeGroup === group) {
+            appendMessageUI(
+              group,
+              msgObj.key,
+              msgObj.textmsg,
+              msgObj.username,
+              isMe,
+              msgObj.type,
+              msgObj.fileName || "Download",
+            );
+          } else {
+            if (!isMe) {
+              unreadCounts[group]++;
+              renderChannelsList();
+
+              if (!notificationsMuted && document.hidden && Notification.permission === "granted") {
+                new Notification(`Relic Chat - ${group}`, {
+                  body: `${msgObj.username} sent a message.`,
+                  icon: "img/IM-message-logo.png",
+                });
               }
             }
-            
           }
-          recorder.start();
-          streamValue = stream;
         });
 
-        stopVoiceBtn.classList.add("active");
-        sendVoiceBtn.classList.remove("active");
-      }
-      
-      stopVoiceBtn.addEventListener("click", stopA);
-      function stopA() {
-        stopVoiceBtn.classList.remove("active");
-        sendBtn.classList.add("active");
-        
-        recorder.stop();
-        //streamValue.getTracks()[0].stop();
-      }
-      function sendVoice(vl) {
-        sendBtn.classList.remove("active");
-        sendVoiceBtn.classList.add("active");
-        socket.emit("voice", {
-          voicemsg: vl,
-          userid: socket.id,
-          groupid: nameOfGroup,
-          username: nameOfUser,
-          type: "audio",
+        window.firebaseModules.onChildRemoved(msgsRef, (snapshot) => {
+          const k = snapshot.key;
+          groupMessages[group] = groupMessages[group].filter((m) => m.key !== k);
+          let el = document.getElementById("msg_" + k);
+          if (el) el.remove();
         });
       }
 
-      //// send file
-      imageuploadbtn.addEventListener("click", () => {
-        fileInp.click();
+      function renderChannelsList() {
+        channelsListDOM.innerHTML = "";
+        joinedGroups.forEach((g) => {
+          const div = document.createElement("div");
+          div.className = "channel-item" + (activeGroup === g ? " active" : "");
+          div.onclick = () => switchToGroup(g);
+
+          let html = `<span># ${g}</span>`;
+          if (unreadCounts[g] > 0) {
+            html += `<span class="unread-badge">${unreadCounts[g]}</span>`;
+          }
+          div.innerHTML = html;
+          channelsListDOM.appendChild(div);
+        });
+      }
+
+      function switchToGroup(group) {
+        activeGroup = group;
+        localStorage.setItem("activeGroup", group);
+        unreadCounts[group] = 0;
+
+        document.getElementById("chatRoomTitle").innerText = "# " + group;
+
+        socket.emit("group-name", { room: group, username: nameOfUser });
+        renderChannelsList();
+
+        chatlist.innerHTML = "";
+        if (groupMessages[group]) {
+          groupMessages[group].forEach((m) => {
+            const isMe = m.username === nameOfUser;
+            appendMessageUI(group, m.key, m.textmsg, m.username, isMe, m.type, m.fileName || "Download");
+          });
+        }
+      }
+
+      async function promptJoinNewGroup() {
+        let g = prompt("Enter the name of the group you want to join:");
+        if (!g || !g.trim()) return;
+        g = g.trim().toLowerCase();
+
+        if (joinedGroups.includes(g)) {
+          switchToGroup(g);
+          return;
+        }
+
+        if (!isFirebaseEnabled) {
+          finalizeJoinGroup(g);
+          return;
+        }
+
+        try {
+          const groupRef = window.firebaseModules.dRef(db, "groups/" + g);
+          const snapshot = await window.firebaseModules.get(groupRef);
+
+          if (snapshot.exists()) {
+            const groupData = snapshot.val();
+            if (groupData.password) {
+              let enteredPw = prompt(`Channel #${g} is protected. Enter password:`);
+              if (enteredPw !== groupData.password) {
+                alert("Incorrect password!");
+                return;
+              }
+            }
+            finalizeJoinGroup(g);
+          } else {
+            if (auth.currentUser && auth.currentUser.isAnonymous) {
+              alert("Error: Guests cannot create channels. Please sign in to create a group.");
+              return;
+            }
+            let pw = prompt(`Create a password for #${g}? (Leave blank for public)`);
+            if (pw === null) return;
+
+            await window.firebaseModules.set(groupRef, {
+              password: pw.trim(),
+              creator: nameOfUser,
+              createdAt: window.firebaseModules.serverTimestamp(),
+            });
+            finalizeJoinGroup(g);
+          }
+        } catch (err) {
+          alert("Database Error: " + err.message);
+        }
+      }
+
+      function finalizeJoinGroup(g) {
+        joinedGroups.push(g);
+        localStorage.setItem("joinedGroups", JSON.stringify(joinedGroups));
+        groupMessages[g] = [];
+        unreadCounts[g] = 0;
+        attachGroupListeners(g);
+        switchToGroup(g);
+      }
+
+      function logOut() {
+        localStorage.removeItem("username");
+        if (isFirebaseEnabled && auth.currentUser)
+          window.firebaseModules.signOut(auth).then(() => window.location.reload());
+        else window.location.reload();
+      }
+
+      // --- Presence & Typing ---
+      socket.on("online-users", (uArr) => {
+        // Socket.io sends online users for the currently switched active socket room
+        usercount.innerText = uArr.length;
+        onlineUsersList.innerHTML = "";
+        uArr.forEach((u) => {
+          const div = document.createElement("div");
+          div.className = "online-user";
+          div.innerHTML = `<span class="status-dot"></span><span>${u}</span>`;
+          if (u === nameOfUser) div.style.fontWeight = "bold";
+          onlineUsersList.appendChild(div);
+        });
       });
 
-      function sendFiles(event) {
-        let file = event.files[0];
-        if (!file.type.match("image.*")) {
-          alert("only image can send");
-        } else {
-          let reader = new FileReader();
-          reader.addEventListener("load", () => {
-            socket.emit("chat", {
-              textmsg: reader.result,
-              userid: socket.id,
-              groupid: nameOfGroup,
-              username: nameOfUser,
-              type: "photo",
+      let typingTimer;
+      texts.addEventListener("input", () => {
+        clearTimeout(typingTimer);
+        socket.emit("typing", {
+          status: texts.value.trim() !== "" ? 1 : 0,
+          groupid: activeGroup,
+          username: nameOfUser,
+        });
+        typingTimer = setTimeout(
+          () => socket.emit("typing", { status: 0, groupid: activeGroup, username: nameOfUser }),
+          2000,
+        );
+      });
+      socket.on("sometype", (usr) => {
+        if (usr === 0 || usr === nameOfUser) typingsome.classList.remove("visible");
+        else {
+          typingsome.innerText = `${usr} is typing...`;
+          typingsome.classList.add("visible");
+        }
+      });
+
+      // --- Core Send System ---
+      function sendToBackend(payload) {
+        if (isFirebaseEnabled) {
+          const msgsRef = window.firebaseModules.dRef(db, "messages/" + activeGroup);
+          window.firebaseModules
+            .push(msgsRef, { ...payload, timestamp: window.firebaseModules.serverTimestamp() })
+            .catch((err) => {
+              console.error("Firebase Database write failed: ", err);
+              alert("Could not send message. Check Firebase Database rules.");
             });
-          });
-          reader.readAsDataURL(file);
         }
       }
 
-      // last chat
-      if (localStorage.getItem("lastchat")) {
-        let chats =JSON.parse(localStorage.getItem("lastchat"));
-        if(chats.length > 1){
-          for(let i=0;i< chats.length;i++){
-            if(chats[i].includes('data:image/')){
-              let trimChat = chats[i].replace(/([\w])+:\sdata:/,"data:");
-              chatlist.innerHTML += `<li class="s1"><img src='${trimChat}'/></li>`;
-            }else if(chats[i].includes('data:audio/')){
-              if (userAgent.includes('Safari')) {
-                  att= "data:audio/mpeg" ;
-                }else{
-                  att= "data:audio/webm" ;
-                };
-              let trimAChat = chats[i].replace(/([\w])+:\sdata:audio\/webm/,att);
-              chatlist.innerHTML += `<li class="s1"><audio src='${trimAChat}' controls></audio></li>`;
-            }else{
-              chatlist.innerHTML += `<li class="s1">${chats[i]}</li>`;
-            }
+      function sendMessage() {
+        const txt = texts.value.trim();
+        if (!txt) return;
+        sendToBackend({
+          textmsg: txt,
+          userid: socket.id,
+          groupid: activeGroup,
+          username: nameOfUser,
+          type: "text",
+          fileName: "",
+        });
+        texts.value = "";
+        socket.emit("typing", { status: 0 });
+      }
+      texts.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") sendMessage();
+      });
+
+      // Delete Message Function
+      window.deleteMessage = function (msgKey) {
+        if (!isFirebaseEnabled) return;
+        if (confirm("Unsend this message for everyone?")) {
+          const msgRef = window.firebaseModules.dRef(db, "messages/" + activeGroup + "/" + msgKey);
+          window.firebaseModules.remove(msgRef).catch((e) => alert("Could not delete message: " + e.message));
         }
+      };
+
+      // --- MEDIA PREVIEW LOGIC ---
+      function showMediaPreview(file, type) {
+        pendingMediaFile = file;
+        pendingMediaType = type;
+        mediaPreviewContainer.classList.remove("hidden");
+
+        let objUrl = URL.createObjectURL(file);
+        if (type === "photo") {
+          mediaPreviewContent.innerHTML = `<img src="${objUrl}" />`;
+        } else if (type === "video") {
+          mediaPreviewContent.innerHTML = `<video src="${objUrl}" style="height:60px;" controls></video>`;
+        } else if (type === "audio") {
+          mediaPreviewContent.innerHTML = `<audio src="${objUrl}" controls></audio>`;
+        } else {
+          mediaPreviewContent.innerHTML = `<div class="file-preview"><i class="fa fa-file" style="font-size:2rem; color:var(--primary-color);"></i> <span>${file.name || "Attachment"}</span></div>`;
         }
-        
-        
-      } else {
-        localStorage.setItem("lastchat", JSON.stringify([]));
+      }
+
+      function hideMediaPreview() {
+        pendingMediaFile = null;
+        pendingMediaType = "file";
+        mediaPreviewContainer.classList.add("hidden");
+        mediaPreviewContent.innerHTML = "";
+      }
+
+      cancelMediaBtn.addEventListener("click", () => {
+        hideMediaPreview();
+        fileInp.value = "";
+      });
+
+      sendMediaBtn.addEventListener("click", () => {
+        if (!pendingMediaFile) return;
+        uploadProgress.classList.remove("hidden"); // Show processing
+
+        const reader = new FileReader();
+        const type = pendingMediaType;
+        const fName = pendingMediaFile.name || "Attachment";
+        reader.onload = () => {
+          sendToBackend({
+            textmsg: reader.result,
+            userid: socket.id,
+            groupid: activeGroup,
+            username: nameOfUser,
+            type: type,
+            fileName: fName,
+          });
+
+          uploadProgress.classList.add("hidden");
+          hideMediaPreview();
+          fileInp.value = "";
+        };
+        reader.readAsDataURL(pendingMediaFile);
+      });
+
+      fileUploadBtn.addEventListener("click", () => fileInp.click());
+
+      fileInp.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        let fileType = "file";
+        if (file.type && file.type.startsWith("image/")) fileType = "photo";
+        else if (file.type && file.type.startsWith("video/")) fileType = "video";
+        else if (file.type && file.type.startsWith("audio/")) fileType = "audio";
+
+        showMediaPreview(file, fileType);
+      });
+
+      // --- VOICE RECORDING ---
+      voiceBtn.addEventListener("click", toggleRecording);
+
+      async function toggleRecording() {
+        if (!isRecording) {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.start();
+            isRecording = true;
+            voiceBtn.classList.add("recording");
+            audioChunks = [];
+
+            mediaRecorder.addEventListener("dataavailable", (event) => {
+              audioChunks.push(event.data);
+            });
+          } catch (err) {
+            console.error(err);
+            alert("Microphone access denied or unavailable.");
+          }
+        } else {
+          mediaRecorder.stop();
+          isRecording = false;
+          voiceBtn.classList.remove("recording");
+
+          mediaRecorder.addEventListener("stop", () => {
+            const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+            audioBlob.name = "VoiceNote_" + Date.now() + ".webm";
+
+            showMediaPreview(audioBlob, "audio");
+            mediaRecorder.stream.getTracks().forEach((t) => t.stop());
+          });
+        }
+      }
+
+      function appendMessageUI(groupContext, msgKey, content, senderName, isMe, type, fileName) {
+        // Prevent appending if the group this message belongs to is not currently active
+        if (groupContext && groupContext !== activeGroup) return;
+
+        if (!isMe && !notificationsMuted) sound.play().catch(() => {});
+
+        // Push notification if out of app (tab hidden)
+        if (!isMe && !notificationsMuted && document.hidden && Notification.permission === "granted") {
+          let nBody = "New message";
+          if (type === "text") {
+            nBody = content;
+          } else if (type === "photo") {
+            nBody = "Sent an Image";
+          } else if (type === "voice" || type === "audio") {
+            nBody = "Sent a Voice Note";
+          } else {
+            nBody = "Sent an Attachment";
+          }
+          new Notification(`Relic Chat - ${activeGroup}`, {
+            body: `${senderName}: ${nBody}`,
+            icon: "img/IM-message-logo.png",
+          });
+        }
+
+        const msgDiv = document.createElement("div");
+        msgDiv.className = "message " + (isMe ? "me" : "other");
+        if (msgKey) msgDiv.id = "msg_" + msgKey;
+
+        let innerHTML = `<div class="message-sender">${senderName}</div>`;
+        let innerContent = "";
+
+        if (type === "text") {
+          let text = content;
+          if (content.startsWith("http"))
+            text = `<a href="${content}" target="_blank" style="color:#60a5fa;text-decoration:underline;">${content}</a>`;
+          innerContent = text;
+        } else if (type === "photo") {
+          innerContent = `
+              <img src="${content}" />
+              <br><a href="${content}" target="_blank" class="download-link" download="${fileName}"><i class="fas fa-download"></i> Save Image</a>
+            `;
+        } else if (type === "video") {
+          innerContent = `
+              <video src="${content}" controls preload="metadata"></video>
+              <br><a href="${content}" target="_blank" class="download-link" download="${fileName}"><i class="fas fa-download"></i> Download Video</a>
+            `;
+        } else if (type === "audio") {
+          innerContent = `
+              <audio src="${content}" controls></audio>
+              <br><a href="${content}" target="_blank" class="download-link" download="${fileName}"><i class="fas fa-download"></i> Save Audio</a>
+            `;
+        } else {
+          innerContent = `
+              <i class="fas fa-file-alt" style="font-size:2rem; margin-bottom:10px; display:block; color:var(--primary-color);"></i>
+              <strong>${fileName}</strong>
+              <br><a href="${content}" target="_blank" class="download-link" download="${fileName}"><i class="fas fa-download"></i> Download File</a>
+            `;
+        }
+
+        if (isMe && msgKey) {
+          innerHTML += `<div class="msg-container-row"><button class="msg-delete-btn" title="Unsend" onclick="deleteMessage('${msgKey}')"><i class="fas fa-trash"></i></button><div class="message-content">${innerContent}</div></div>`;
+        } else {
+          innerHTML += `<div class="message-content">${innerContent}</div>`;
+        }
+
+        msgDiv.innerHTML = innerHTML;
+        chatlist.appendChild(msgDiv);
+        chatlist.scrollTop = chatlist.scrollHeight;
+      }
+
+      function requestPushPermission() {
+        Notification.requestPermission().then((permission) => {
+          if (permission === "granted") alert("Notifications enabled!");
+        });
       }
     </script>
   </body>
